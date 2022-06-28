@@ -3,27 +3,32 @@ import { useRouter } from "next/router";
 
 import StatusLabel from "features/common/components/status-label";
 import Button from "features/common/components/button";
-import { useWalletIsSignedInQuery } from "features/common/hooks/useWalletQueries";
+import {
+  useWalletIsSignedInQuery,
+  useWalletSignedInAccountQuery,
+} from "features/common/hooks/useWalletQueries";
 
 import { utils } from "near-api-js";
 
 import type { Issue } from "../types";
+import type { Bounty } from "../../bounties/types";
 import { viewFunction, callFunction } from "features/near/api";
+import { parseDate } from "../../../utils/helpers.js";
+import { QueryObserverIdleResult } from "react-query";
 
 export default function IssueDetailsSidebar(props: { issue: Issue }) {
   const router = useRouter();
   const walletIsSignedInQuery = useWalletIsSignedInQuery();
+  const walledId = useWalletSignedInAccountQuery();
 
-  const [bounty, setBounty] = useState(null);
+  const [bounty, setBounty] = useState<Bounty | null>(null);
   const [pool, setPool] = useState("");
   const [poolInDollars, setPoolInDollars] = useState<string>("");
+  const [isApplyingToWork, setIsApplyingToWork] = useState(false);
 
-  /* A hook that is called when the component is mounted. 
-  In order to fetch the bounty stored in the contract
- */
-  useEffect(() => {
-    if (!props.issue) return;
-    viewFunction("getBountyByIssue", { issueId: props.issue.number })
+
+  const loadBountyDetails = () => {
+    viewFunction("getBountyByIssue", { issueId: props.issue.url })
       .then((res) => {
         setBounty(res);
         setPool(utils.format.formatNearAmount(res?.pool));
@@ -31,11 +36,16 @@ export default function IssueDetailsSidebar(props: { issue: Issue }) {
       .catch((error) => {
         console.log(error);
       });
+  };
+
+  /* A hook that is called when the component is mounted. 
+  In order to fetch the bounty stored in the contract
+ */
+  useEffect(() => {
+    if (!props.issue) return;
+    loadBountyDetails();
   }, []);
 
-  
-
-  
   useEffect(() => {
     /* This is a function that is called when a bounty is found. It fetches the current price of
     NEAR from the CoinGecko API and then calculates the value of the bounty pool in USD. */
@@ -52,7 +62,7 @@ export default function IssueDetailsSidebar(props: { issue: Issue }) {
         )
       );
     })();
-  }, [bounty , pool]);
+  }, [bounty, pool]);
 
   return (
     <aside>
@@ -61,13 +71,16 @@ export default function IssueDetailsSidebar(props: { issue: Issue }) {
         title="Total bounty sum"
         content={
           <div>
-            {!bounty
-              ? "-"
-              : pool + " Near"}{" "}
-            - ${poolInDollars}
+            {!bounty ? "-" : pool + " Near"} - ${poolInDollars}
           </div>
         }
       />
+      {bounty && (
+        <SidebarItem
+          title="Deadline"
+          content={<div>{parseDate(bounty?.deadline)}</div>}
+        />
+      )}
       <SidebarItem
         title="Funders"
         content={
@@ -91,19 +104,27 @@ export default function IssueDetailsSidebar(props: { issue: Issue }) {
         </Button>
 
         <Button
-          onClick={() =>
+          onClick={() => {
+            setIsApplyingToWork(true);
             /* Calling the startWork function in the contract. */
             callFunction("startWork", { issueId: props.issue.number })
               .then(() => {
+                setIsApplyingToWork(false);
+                loadBountyDetails();
                 alert("Successfully started working on the bounty");
               })
               .catch((error) => {
+                setIsApplyingToWork(false);
                 alert(error);
-              })
+              });
+          }}
+          disabled={
+            !bounty ||
+            !walletIsSignedInQuery.data ||
+            bounty?.workers?.includes(walledId?.data)
           }
-          disabled={!bounty || !walletIsSignedInQuery.data}
         >
-          Start Work
+          {isApplyingToWork ? "Loading..." : "Start Work"}
         </Button>
       </div>
       {!walletIsSignedInQuery.data && (

@@ -13,15 +13,21 @@ export async function getIssues(
   }
 ) {
   const { perPage = 10, page = 1, labels } = reqParams;
+
+  let labelsArray = labels?.split(",");
+
   const { data = [] } = await octokit.rest.issues.listForRepo({
     owner: config.github.repoOwner,
     repo: config.github.repoName,
-    labels,
     per_page: perPage,
     page,
   });
 
-  return data;
+  let filtered = data.filter((issue) =>
+    issue.labels.some((label) => labelsArray?.includes(label.name))
+  );
+
+  return filtered;
 }
 
 export async function getIssueByNumber(issueNumber: number) {
@@ -73,4 +79,19 @@ export async function getMetadataComment(issueNumber: number) {
   });
 
   return metadataComment;
+}
+
+export async function getMetadataCommentId(issueNumber: number) {
+  const { data = [] } = await octokit.rest.issues.listComments({
+    owner: config.github.repoOwner,
+    repo: config.github.repoName,
+    issue_number: issueNumber,
+  });
+
+  const metadataComment = data.find((comment) => {
+    const match = comment.body?.match(metadataCommentRegex);
+    return Boolean(match);
+  });
+
+  return { id: metadataComment?.id, body: metadataComment?.body };
 }

@@ -1,4 +1,4 @@
-# Better
+# Better 
 
 ## How to submit your idea
 
@@ -8,7 +8,7 @@ To list your issue on your Better board, tag the issue category as `bug` or `fea
 
 Your issue should now appear on [better.betterhq.org](https://better.betterhq.org/).
 
-You can now
+You can now:
 
 👉 login with Discord and vote on your favorite issue
 
@@ -29,14 +29,27 @@ Setting up your own Better project takes a few steps:
     - Add a new project, linking to your forked repo
      - Set your ENV variables (Ask us on [Discord](https://discord.com/invite/wwwwRFa6aj)!)
 
-After a succesfful deployment, point your vercel deployment to your custom URL, eg. feedback.yourdapp.com, roadmap.yourdapp.com, bounties.yourdapp.com
+After a successful deployment, point your vercel deployment to your custom URL, eg. feedback.yourdapp.com, roadmap.yourdapp.com, bounties.yourdapp.com
 
 - Copy your DNS info at `https://vercel.com/[yourproject]/[yourrepo]/settings/domains`
 - Add the info in your domain manager interface
 
 🎊 Congratulations, you just deployed your custom Better site 🎉
 
-You want to customize your site UI or got feature ideas for Better? Join our [Discord](https://discord.com/invite/wwwwRFa6aj) and let us know!
+---
+
+## How to customize your Better site
+
+Set your project name and custom footer links in this config file: `\better-app\src\config.ts`
+
+Better mirrors each Github issue based on its tags. The default tags are `open`, `inProgress`, `live`.
+If you want to set your own, edit the following files:
+-  `\better-app\src\config.ts`
+- `src/features/issues/components/issues-list-page.tsx`
+- `src/features/issues/constants.ts`
+- `src/features/issues/types.ts`
+
+You want to customize your site's UI or got feature ideas for Better? Join our [Discord](https://discord.com/invite/wwwwRFa6aj) and let us know!
 
 ---
 

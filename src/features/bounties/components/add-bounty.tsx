@@ -14,6 +14,7 @@ import { useRouter } from "next/router";
 
 import type { Token } from "features/tokens/types";
 
+
 export default function AddBounty(props: { issueNumber: number }) {
   const [token, setToken] = React.useState<Token | null>(null);
   const [amount, setAmount] = React.useState("");
@@ -27,7 +28,7 @@ export default function AddBounty(props: { issueNumber: number }) {
   const router = useRouter();
 
   useEffect(() => {
-    let issueNumber = window.location.pathname.split("/")[2]
+    let issueNumber = window.location.pathname.split("/")[2];
     if (!walletChain) {
       router.replace(`/issues/${issueNumber}`);
     }
@@ -46,8 +47,10 @@ export default function AddBounty(props: { issueNumber: number }) {
       return setAreInputsValid(false);
     }
 
+    localStorage.setItem("isBountyAdded", "true");
+
     addBountyMutation.mutate({
-      issueNumber: issue.number,
+      issueNumber: issue.url,
       issueDescription: "byebye",
       chain: walletChain,
       token: token.address,
@@ -59,11 +62,19 @@ export default function AddBounty(props: { issueNumber: number }) {
   }
 
   useEffect(() => {
+    const isBountyAdded = localStorage.getItem("isBountyAdded");
+    if (isBountyAdded === "true") {
+      localStorage.removeItem("isBountyAdded");
+      router.replace(`/issues/${props.issueNumber}`);
+    }
+  }, []);
+
+  useEffect(() => {
     /* Checking if the issue exists. */
     if (!issue) return;
 
     /* Getting bounty details for the issue */
-    viewFunction("getBountyByIssue", { issueId: issue?.number })
+    viewFunction("getBountyByIssue", { issueId: issue?.url })
       .then((res) => {
         setDoesBountyExist(res);
       })
